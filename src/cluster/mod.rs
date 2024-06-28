@@ -8,26 +8,25 @@ pub use member_list::{MemberListRequest, MemberListResponse};
 pub use member_remove::{MemberRemoveRequest, MemberRemoveResponse};
 pub use member_update::{MemberUpdateRequest, MemberUpdateResponse};
 
-use async_trait::async_trait;
+use std::future::Future;
 
 use crate::proto::etcdserverpb;
 use crate::Result;
 
-#[async_trait]
 pub trait ClusterOp {
-    async fn member_add<R>(&self, req: R) -> Result<MemberAddResponse>
+    fn member_add<R>(&self, req: R) -> impl Future<Output = Result<MemberAddResponse>>
     where
         R: Into<MemberAddRequest> + Send;
 
-    async fn member_remove<R>(&self, req: R) -> Result<MemberRemoveResponse>
+    fn member_remove<R>(&self, req: R) -> impl Future<Output = Result<MemberRemoveResponse>>
     where
         R: Into<MemberRemoveRequest> + Send;
 
-    async fn member_update<R>(&self, req: R) -> Result<MemberUpdateResponse>
+    fn member_update<R>(&self, req: R) -> impl Future<Output = Result<MemberUpdateResponse>>
     where
         R: Into<MemberUpdateRequest> + Send;
 
-    async fn member_list(&self) -> Result<MemberListResponse>;
+    fn member_list(&self) -> impl Future<Output = Result<MemberListResponse>>;
 }
 
 #[derive(Debug, Clone)]

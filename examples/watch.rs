@@ -2,17 +2,14 @@ use etcd_rs::{Client, ClientConfig, KeyRange, KeyValueOp, Result, WatchInbound, 
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let cli = Client::connect(ClientConfig::new([
+    let cli = Client::new(ClientConfig::new([
         "http://127.0.0.1:12379".into(),
         "http://127.0.0.1:22379".into(),
         "http://127.0.0.1:32379".into(),
     ]))
     .await?;
 
-    let (mut stream, cancel) = cli
-        .watch(KeyRange::prefix("foo"))
-        .await
-        .expect("watch by prefix");
+    let (mut stream, cancel) = cli.watch(KeyRange::prefix("foo")).await.expect("watch by prefix");
 
     tokio::spawn(async move {
         cli.put(("foo1", "1")).await.expect("put kv");
@@ -30,14 +27,14 @@ async fn main() -> Result<()> {
         match stream.inbound().await {
             WatchInbound::Ready(resp) => {
                 println!("receive event: {:?}", resp);
-            }
+            },
             WatchInbound::Interrupted(e) => {
                 eprintln!("encounter error: {:?}", e);
-            }
+            },
             WatchInbound::Closed => {
                 println!("watch stream closed");
                 break;
-            }
+            },
         }
     }
 

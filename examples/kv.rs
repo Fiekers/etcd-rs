@@ -44,13 +44,18 @@ async fn get(cli: &Client) -> Result<()> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let cli = Client::connect(ClientConfig::new([
-        "http://127.0.0.1:12379".into(),
-        "http://127.0.0.1:22379".into(),
-        "http://127.0.0.1:32379".into(),
-    ]))
-    .await?;
-
+    let cfg = ClientConfig {
+        endpoints: [
+            "http://127.0.0.1:12379".into(),
+            "http://127.0.0.1:22379".into(),
+            "http://127.0.0.1:32379".into(),
+        ]
+        .to_vec(),
+        auth: Some(("root".to_owned(), "123456".to_owned())),
+        connect_timeout: Duration::from_secs(30),
+        http2_keep_alive_interval: Duration::from_secs(5),
+    };
+    let cli = Client::new(cfg).await?;
     put(&cli).await?;
     put_with_lease(&cli).await?;
     get(&cli).await?;

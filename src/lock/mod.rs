@@ -1,6 +1,7 @@
-use async_trait::async_trait;
+use std::future::Future;
 
-#[async_trait]
+use crate::Result;
+
 pub trait LockOp {
-    async fn lock(&self);
+    fn lock(&self) -> impl Future<Output = Result<()>>;
 }

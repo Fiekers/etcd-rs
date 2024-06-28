@@ -14,7 +14,8 @@ pub use keep_alive::{LeaseKeepAliveRequest, LeaseKeepAliveResponse};
 pub use revoke::{LeaseRevokeRequest, LeaseRevokeResponse};
 pub use time_to_live::{LeaseTimeToLiveRequest, LeaseTimeToLiveResponse};
 
-use async_trait::async_trait;
+use std::future::Future;
+
 use tokio::sync::mpsc::Sender;
 use tonic::Streaming;
 
@@ -22,19 +23,18 @@ use crate::{Error, Result};
 
 pub type LeaseId = i64;
 
-#[async_trait]
 pub trait LeaseOp {
-    async fn grant_lease<R>(&self, req: R) -> Result<LeaseGrantResponse>
+    fn grant_lease<R>(&self, req: R) -> impl Future<Output = Result<LeaseGrantResponse>>
     where
         R: Into<LeaseGrantRequest> + Send;
 
-    async fn revoke<R>(&self, req: R) -> Result<LeaseRevokeResponse>
+    fn revoke<R>(&self, req: R) -> impl Future<Output = Result<LeaseRevokeResponse>>
     where
         R: Into<LeaseRevokeRequest> + Send;
 
-    async fn keep_alive_for(&self, lease_id: LeaseId) -> Result<LeaseKeepAlive>;
+    fn keep_alive_for(&self, lease_id: LeaseId) -> impl Future<Output = Result<LeaseKeepAlive>>;
 
-    async fn time_to_live<R>(&self, req: R) -> Result<LeaseTimeToLiveResponse>
+    fn time_to_live<R>(&self, req: R) -> impl Future<Output = Result<LeaseTimeToLiveResponse>>
     where
         R: Into<LeaseTimeToLiveRequest> + Send;
 }
@@ -51,11 +51,7 @@ impl LeaseKeepAlive {
         req_tx: Sender<crate::proto::etcdserverpb::LeaseKeepAliveRequest>,
         resp_rx: Streaming<crate::proto::etcdserverpb::LeaseKeepAliveResponse>,
     ) -> Self {
-        Self {
-            id,
-            req_tx,
-            resp_rx,
-        }
+        Self { id, req_tx, resp_rx }
     }
 
     #[inline]
@@ -66,10 +62,7 @@ impl LeaseKeepAlive {
     pub async fn keep_alive(&mut self) -> Result<Option<LeaseKeepAliveResponse>> {
         let req = LeaseKeepAliveRequest::new(self.lease_id());
 
-        self.req_tx
-            .send(req.into())
-            .await
-            .map_err(|_| Error::ChannelClosed)?;
+        self.req_tx.send(req.into()).await.map_err(|_| Error::ChannelClosed)?;
 
         Ok(self.resp_rx.message().await?.map(|resp| resp.into()))
     }

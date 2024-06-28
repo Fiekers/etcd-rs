@@ -2,7 +2,7 @@ use etcd_rs::{Client, ClientConfig, Endpoint, KeyValueOp, Result};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let cli = Client::connect(ClientConfig::new([
+    let cli = Client::new(ClientConfig::new([
         Endpoint::from("http://127.0.0.1:12379")
             .tls(
                 "etcd-1",

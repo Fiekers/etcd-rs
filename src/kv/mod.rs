@@ -10,51 +10,48 @@ pub use put::{PutRequest, PutResponse};
 pub use range::{RangeRequest, RangeResponse};
 pub use txn::{TxnCmp, TxnOp, TxnOpResponse, TxnRequest, TxnResponse};
 
-use std::ops::Range;
-
-use async_trait::async_trait;
+use std::{future::Future, ops::Range};
 
 use crate::lease::LeaseId;
 use crate::proto::mvccpb;
 use crate::Result;
 
-#[async_trait]
 pub trait KeyValueOp {
-    async fn put<R>(&self, req: R) -> Result<PutResponse>
+    fn put<R>(&self, req: R) -> impl Future<Output = Result<PutResponse>>
     where
-        R: Into<PutRequest> + Send;
+        R: Into<PutRequest> + Clone;
 
-    async fn get<R>(&self, req: R) -> Result<RangeResponse>
+    fn get<R>(&self, req: R) -> impl Future<Output = Result<RangeResponse>>
     where
-        R: Into<RangeRequest> + Send;
-    async fn get_all(&self) -> Result<RangeResponse>;
-    async fn get_by_prefix<K>(&self, p: K) -> Result<RangeResponse>
+        R: Into<RangeRequest>;
+    fn get_all(&self) -> impl Future<Output = Result<RangeResponse>>;
+    fn get_by_prefix<K>(&self, p: K) -> impl Future<Output = Result<RangeResponse>>
     where
-        K: Into<Vec<u8>> + Send;
-    async fn get_range<F, E>(&self, from: F, end: E) -> Result<RangeResponse>
+        K: Into<Vec<u8>>;
+    fn get_range<F, E>(&self, from: F, end: E) -> impl Future<Output = Result<RangeResponse>>
     where
-        F: Into<Vec<u8>> + Send,
-        E: Into<Vec<u8>> + Send;
+        F: Into<Vec<u8>>,
+        E: Into<Vec<u8>>;
 
-    async fn delete<R>(&self, req: R) -> Result<DeleteResponse>
+    fn delete<R>(&self, req: R) -> impl Future<Output = Result<DeleteResponse>>
     where
-        R: Into<DeleteRequest> + Send;
-    async fn delete_all(&self) -> Result<DeleteResponse>;
-    async fn delete_by_prefix<K>(&self, p: K) -> Result<DeleteResponse>
+        R: Into<DeleteRequest>;
+    fn delete_all(&self) -> impl Future<Output = Result<DeleteResponse>>;
+    fn delete_by_prefix<K>(&self, p: K) -> impl Future<Output = Result<DeleteResponse>>
     where
-        K: Into<Vec<u8>> + Send;
-    async fn delete_range<F, E>(&self, from: F, end: E) -> Result<DeleteResponse>
+        K: Into<Vec<u8>>;
+    fn delete_range<F, E>(&self, from: F, end: E) -> impl Future<Output = Result<DeleteResponse>>
     where
-        F: Into<Vec<u8>> + Send,
-        E: Into<Vec<u8>> + Send;
+        F: Into<Vec<u8>>,
+        E: Into<Vec<u8>>;
 
-    async fn txn<R>(&self, req: R) -> Result<TxnResponse>
+    fn txn<R>(&self, req: R) -> impl Future<Output = Result<TxnResponse>>
     where
-        R: Into<TxnRequest> + Send;
+        R: Into<TxnRequest>;
 
-    async fn compact<R>(&self, req: R) -> Result<CompactResponse>
+    fn compact<R>(&self, req: R) -> impl Future<Output = Result<CompactResponse>>
     where
-        R: Into<CompactRequest> + Send;
+        R: Into<CompactRequest>;
 }
 
 /// Key-Value pair.

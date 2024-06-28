@@ -4,10 +4,12 @@ mod watch;
 
 pub use watch::{WatchCancelRequest, WatchCreateRequest, WatchResponse};
 
-use std::pin::Pin;
-use std::task::{Context, Poll};
+use std::{
+    future::Future,
+    pin::Pin,
+    task::{Context, Poll},
+};
 
-use async_trait::async_trait;
 use futures::Stream;
 use tokio::sync::mpsc::Sender;
 use tonic::Streaming;
@@ -16,9 +18,8 @@ use crate::proto::etcdserverpb;
 use crate::proto::mvccpb;
 use crate::{Error, KeyValue, Result};
 
-#[async_trait]
 pub trait WatchOp {
-    async fn watch<R>(&self, req: R) -> Result<(WatchStream, WatchCanceler)>
+    fn watch<R>(&self, req: R) -> impl Future<Output = Result<(WatchStream, WatchCanceler)>>
     where
         R: Into<WatchCreateRequest> + Send;
 
@@ -63,7 +64,7 @@ impl WatchStream {
                 } else {
                     WatchInbound::Ready(resp.into())
                 }
-            }
+            },
             Ok(None) => WatchInbound::Interrupted(Error::WatchEventExhausted),
             Err(e) => WatchInbound::Interrupted(e.into()),
         }
@@ -74,13 +75,11 @@ impl Stream for WatchStream {
     type Item = WatchInbound;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        Pin::new(&mut self.get_mut().stream)
-            .poll_next(cx)
-            .map(|e| match e {
-                Some(Ok(resp)) => Some(WatchInbound::Ready(resp.into())),
-                Some(Err(e)) => Some(WatchInbound::Interrupted(e.into())),
-                None => Some(WatchInbound::Closed),
-            })
+        Pin::new(&mut self.get_mut().stream).poll_next(cx).map(|e| match e {
+            Some(Ok(resp)) => Some(WatchInbound::Ready(resp.into())),
+            Some(Err(e)) => Some(WatchInbound::Interrupted(e.into())),
+            None => Some(WatchInbound::Closed),
+        })
     }
 }
 

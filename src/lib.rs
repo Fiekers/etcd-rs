@@ -21,19 +21,17 @@ pub use cluster::{
     MemberRemoveRequest, MemberRemoveResponse, MemberUpdateRequest, MemberUpdateResponse,
 };
 pub use kv::{
-    CompactRequest, CompactResponse, DeleteRequest, DeleteResponse, KeyRange, KeyValue, KeyValueOp,
-    PutRequest, PutResponse, RangeRequest, RangeResponse, TxnCmp, TxnOp, TxnOpResponse, TxnRequest,
-    TxnResponse,
+    CompactRequest, CompactResponse, DeleteRequest, DeleteResponse, KeyRange, KeyValue, KeyValueOp, PutRequest,
+    PutResponse, RangeRequest, RangeResponse, TxnCmp, TxnOp, TxnOpResponse, TxnRequest, TxnResponse,
 };
 pub use lease::{
-    LeaseGrantRequest, LeaseGrantResponse, LeaseId, LeaseKeepAlive, LeaseKeepAliveRequest,
-    LeaseKeepAliveResponse, LeaseOp, LeaseRevokeRequest, LeaseRevokeResponse,
-    LeaseTimeToLiveRequest, LeaseTimeToLiveResponse,
+    LeaseGrantRequest, LeaseGrantResponse, LeaseId, LeaseKeepAlive, LeaseKeepAliveRequest, LeaseKeepAliveResponse,
+    LeaseOp, LeaseRevokeRequest, LeaseRevokeResponse, LeaseTimeToLiveRequest, LeaseTimeToLiveResponse,
 };
 pub use response_header::ResponseHeader;
 pub use watch::{
-    Event, EventType, WatchCancelRequest, WatchCanceler, WatchCreateRequest, WatchInbound, WatchOp,
-    WatchResponse, WatchStream,
+    Event, EventType, WatchCancelRequest, WatchCanceler, WatchCreateRequest, WatchInbound, WatchOp, WatchResponse,
+    WatchStream,
 };
 
 pub use client::{Client, ClientConfig, Endpoint};

@@ -3,7 +3,7 @@ use crate::lease::LeaseId;
 use crate::proto::etcdserverpb;
 use crate::ResponseHeader;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct PutRequest {
     proto: etcdserverpb::PutRequest,
 }

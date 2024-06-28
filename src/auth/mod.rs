@@ -1,14 +1,13 @@
 mod authenticate;
+pub use authenticate::AuthenticateRequest;
+pub use authenticate::AuthenticateResponse;
 
-pub use authenticate::{AuthenticateRequest, AuthenticateResponse};
-
-use async_trait::async_trait;
+use std::future::Future;
 
 use crate::Result;
 
-#[async_trait]
 pub trait AuthOp {
-    async fn authenticate<R>(&self, req: R) -> Result<AuthenticateResponse>
+    fn authenticate<R>(&self, req: R) -> impl Future<Output = Result<AuthenticateResponse>>
     where
         R: Into<AuthenticateRequest> + Send;
 }
