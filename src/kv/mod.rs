@@ -19,7 +19,7 @@ use crate::Result;
 pub trait KeyValueOp {
     fn put<R>(&self, req: R) -> impl Future<Output = Result<PutResponse>>
     where
-        R: Into<PutRequest> + Clone;
+        R: Into<PutRequest>;
 
     fn get<R>(&self, req: R) -> impl Future<Output = Result<RangeResponse>>
     where

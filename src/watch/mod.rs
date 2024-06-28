@@ -23,7 +23,8 @@ pub trait WatchOp {
     where
         R: Into<WatchCreateRequest> + Send;
 
-    // async fn cancel_watch<R>(&self, req: R) -> Result<()>
+    // TODO: cancel_watch
+    // async fn cancel_watch<R>(&self, req: R) -> impl Future<Output = Result<()>>
     // where
     //     R: Into<WatchCancelRequest> + Send;
 }

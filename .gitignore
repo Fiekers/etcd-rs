@@ -5,3 +5,4 @@ Cargo.lock
 etcd-docker-compose.yaml
 etcd
 *.tar.gz
+.vscode

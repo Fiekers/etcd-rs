@@ -1,4 +1,4 @@
-use etcd_rs::{Client, ClientConfig, Endpoint, KeyValueOp, Result};
+use ya_etcd_rs::{Client, ClientConfig, Endpoint, KeyValueOp, Result};
 
 #[tokio::main]
 async fn main() -> Result<()> {
