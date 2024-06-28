@@ -79,7 +79,7 @@ impl From<etcdserverpb::PutResponse> for PutResponse {
     fn from(proto: etcdserverpb::PutResponse) -> Self {
         Self {
             header: From::from(proto.header.expect("must fetch header")),
-            prev_kv: From::from(proto.prev_kv.unwrap_or(Default::default())),
+            prev_kv: From::from(proto.prev_kv.unwrap_or_default()),
         }
     }
 }

@@ -10,22 +10,23 @@ use tonic::{
 };
 
 use crate::cluster::{
-    ClusterOp, MemberAddRequest, MemberAddResponse, MemberListRequest, MemberListResponse, MemberRemoveRequest,
-    MemberRemoveResponse, MemberUpdateRequest, MemberUpdateResponse,
+    ClusterOp, MemberAddRequest, MemberAddResponse, MemberListRequest, MemberListResponse,
+    MemberRemoveRequest, MemberRemoveResponse, MemberUpdateRequest, MemberUpdateResponse,
 };
 use crate::kv::{
-    CompactRequest, CompactResponse, DeleteRequest, DeleteResponse, KeyRange, KeyValueOp, PutRequest, PutResponse,
-    RangeRequest, RangeResponse, TxnRequest, TxnResponse,
+    CompactRequest, CompactResponse, DeleteRequest, DeleteResponse, KeyRange, KeyValueOp,
+    PutRequest, PutResponse, RangeRequest, RangeResponse, TxnRequest, TxnResponse,
 };
 use crate::lease::{
-    LeaseGrantRequest, LeaseGrantResponse, LeaseId, LeaseKeepAlive, LeaseOp, LeaseRevokeRequest, LeaseRevokeResponse,
-    LeaseTimeToLiveRequest, LeaseTimeToLiveResponse,
+    LeaseGrantRequest, LeaseGrantResponse, LeaseId, LeaseKeepAlive, LeaseOp, LeaseRevokeRequest,
+    LeaseRevokeResponse, LeaseTimeToLiveRequest, LeaseTimeToLiveResponse,
 };
 use crate::proto::etcdserverpb;
 use crate::proto::etcdserverpb::cluster_client::ClusterClient;
 use crate::proto::etcdserverpb::LeaseKeepAliveRequest;
 use crate::proto::etcdserverpb::{
-    auth_client::AuthClient, kv_client::KvClient, lease_client::LeaseClient, watch_client::WatchClient,
+    auth_client::AuthClient, kv_client::KvClient, lease_client::LeaseClient,
+    watch_client::WatchClient,
 };
 use crate::watch::{WatchCanceler, WatchCreateRequest, WatchOp, WatchStream};
 use crate::{
@@ -181,10 +182,15 @@ impl Client {
     async fn new_channel(cfg: &ClientConfig) -> Result<Channel> {
         let mut endpoints = Vec::with_capacity(cfg.endpoints.len());
         for e in cfg.endpoints.iter() {
-            let mut c = Channel::from_shared(e.url.clone())?
+            #[cfg(not(feature = "tls"))]
+            let c = Channel::from_shared(e.url.clone())?
                 .connect_timeout(cfg.connect_timeout)
                 .http2_keep_alive_interval(cfg.http2_keep_alive_interval);
 
+            #[cfg(feature = "tls")]
+            let mut c = Channel::from_shared(e.url.clone())?
+                .connect_timeout(cfg.connect_timeout)
+                .http2_keep_alive_interval(cfg.http2_keep_alive_interval);
             #[cfg(feature = "tls")]
             {
                 if let TlsOption::WithConfig(tls) = e.tls_opt.clone() {
@@ -244,7 +250,7 @@ impl Client {
     }
 
     async fn set_token<T>(&self, req: &mut tonic::Request<T>) {
-        let token = self.token.clone();
+        let token = Arc::clone(&self.token);
         let h = token.read().await;
         if let Some(token) = h.to_owned() {
             req.metadata_mut().insert("authorization", token);
@@ -264,14 +270,14 @@ impl Client {
             match f(new_req).await {
                 Ok(response) => {
                     return Ok(response);
-                },
+                }
                 Err(status) => {
                     if status.code() == tonic::Code::Unauthenticated {
                         self.refresh_token().await?;
                     } else {
                         return Err(Error::Response(status));
                     }
-                },
+                }
             }
         }
         Err(Error::ExecuteFailed)
@@ -328,7 +334,9 @@ impl KeyValueOp for Client {
     {
         let req = tonic::Request::new(req.into().into());
         let resp = self
-            .execute_with_retries(req, |req| async { self.kv_client.clone().delete_range(req).await })
+            .execute_with_retries(req, |req| async {
+                self.kv_client.clone().delete_range(req).await
+            })
             .await?;
 
         Ok(resp.into_inner().into())
@@ -371,7 +379,9 @@ impl KeyValueOp for Client {
     {
         let req = tonic::Request::new(req.into().into());
         let resp = self
-            .execute_with_retries(req, |req| async { self.kv_client.clone().compact(req).await })
+            .execute_with_retries(req, |req| async {
+                self.kv_client.clone().compact(req).await
+            })
             .await?;
 
         Ok(resp.into_inner().into())
@@ -390,7 +400,8 @@ impl WatchOp for Client {
         let mut req = tonic::Request::new(ReceiverStream::new(rx));
         self.set_token(&mut req).await;
 
-        req.metadata_mut().insert("hasleader", "true".try_into().unwrap());
+        req.metadata_mut()
+            .insert("hasleader", "true".try_into().unwrap());
 
         let resp = self.watch_client.clone().watch(req).await?;
 
@@ -399,11 +410,13 @@ impl WatchOp for Client {
         let watch_id = match inbound.message().await? {
             Some(resp) => {
                 if !resp.created {
-                    return Err(Error::WatchEvent("should receive created event at first".to_owned()));
+                    return Err(Error::WatchEvent(
+                        "should receive created event at first".to_owned(),
+                    ));
                 }
                 assert!(resp.events.is_empty(), "received created event {:?}", resp);
                 resp.watch_id
-            },
+            }
 
             None => return Err(Error::CreateWatch),
         };
@@ -419,7 +432,9 @@ impl LeaseOp for Client {
     {
         let req = tonic::Request::new(req.into().into());
         let resp = self
-            .execute_with_retries(req, |req| async { self.lease_client.clone().lease_grant(req).await })
+            .execute_with_retries(req, |req| async {
+                self.lease_client.clone().lease_grant(req).await
+            })
             .await?;
 
         Ok(resp.into_inner().into())
@@ -431,7 +446,9 @@ impl LeaseOp for Client {
     {
         let req = tonic::Request::new(req.into().into());
         let resp = self
-            .execute_with_retries(req, |req| async { self.lease_client.clone().lease_revoke(req).await })
+            .execute_with_retries(req, |req| async {
+                self.lease_client.clone().lease_revoke(req).await
+            })
             .await?;
 
         Ok(resp.into_inner().into())
@@ -444,15 +461,23 @@ impl LeaseOp for Client {
 
         let initial_req = LeaseKeepAliveRequest { id: lease_id };
 
-        req_tx.send(initial_req).await.map_err(|_| Error::ChannelClosed)?;
+        req_tx
+            .send(initial_req)
+            .await
+            .map_err(|_| Error::ChannelClosed)?;
 
-        let mut resp_rx = self.lease_client.clone().lease_keep_alive(req_rx).await?.into_inner();
+        let mut resp_rx = self
+            .lease_client
+            .clone()
+            .lease_keep_alive(req_rx)
+            .await?
+            .into_inner();
 
         let lease_id = match resp_rx.message().await? {
             Some(resp) => resp.id,
             None => {
                 return Err(Error::CreateWatch);
-            },
+            }
         };
 
         Ok(LeaseKeepAlive::new(lease_id, req_tx, resp_rx))
@@ -480,7 +505,9 @@ impl ClusterOp for Client {
     {
         let req = tonic::Request::new(req.into().into());
         let resp = self
-            .execute_with_retries(req, |req| async { self.cluster_client.clone().member_add(req).await })
+            .execute_with_retries(req, |req| async {
+                self.cluster_client.clone().member_add(req).await
+            })
             .await?;
 
         Ok(resp.into_inner().into())
@@ -517,7 +544,9 @@ impl ClusterOp for Client {
     async fn member_list(&self) -> Result<MemberListResponse> {
         let req = tonic::Request::new(MemberListRequest::new().into());
         let resp = self
-            .execute_with_retries(req, |req| async { self.cluster_client.clone().member_list(req).await })
+            .execute_with_retries(req, |req| async {
+                self.cluster_client.clone().member_list(req).await
+            })
             .await?;
 
         Ok(resp.into_inner().into())

@@ -10,6 +10,25 @@ description = "etcd client for rust"
 documentation = "https://docs.rs/etcd-rs"
 license = "MIT"
 
+[lints.rust]
+dead_code = "allow"
+
+[lints.clippy]
+module_inception = "allow"
+
+[[example]]
+name = "kv"
+path = "examples/kv.rs"
+
+[[example]]
+name = "tls"
+path = "examples/tls.rs"
+required-features = ["tls"]
+
+[[example]]
+name = "watch"
+path = "examples/watch.rs"
+
 [features]
 default = ["tls"]
 tls = ["tonic/tls", "tokio/fs"]
@@ -17,14 +36,14 @@ tls = ["tonic/tls", "tokio/fs"]
 [dependencies]
 tonic = "0.11"
 prost = "0.12"
-tokio = "1.27"
+tokio = "1.38"
 tokio-stream = "0.1"
 futures = "0.3"
 thiserror = "1.0"
 http = "0.2"
 
 [dev-dependencies]
-tokio = { version = "1.27", features = ["full"] }
+tokio = { version = "1.38", features = ["macros", "rt-multi-thread"] }
 
 [build-dependencies]
 tonic-build = "0.11"
