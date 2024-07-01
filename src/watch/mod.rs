@@ -65,7 +65,7 @@ impl WatchStream {
                 } else {
                     WatchInbound::Ready(resp.into())
                 }
-            },
+            }
             Ok(None) => WatchInbound::Interrupted(Error::WatchEventExhausted),
             Err(e) => WatchInbound::Interrupted(e.into()),
         }
@@ -76,11 +76,13 @@ impl Stream for WatchStream {
     type Item = WatchInbound;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        Pin::new(&mut self.get_mut().stream).poll_next(cx).map(|e| match e {
-            Some(Ok(resp)) => Some(WatchInbound::Ready(resp.into())),
-            Some(Err(e)) => Some(WatchInbound::Interrupted(e.into())),
-            None => Some(WatchInbound::Closed),
-        })
+        Pin::new(&mut self.get_mut().stream)
+            .poll_next(cx)
+            .map(|e| match e {
+                Some(Ok(resp)) => Some(WatchInbound::Ready(resp.into())),
+                Some(Err(e)) => Some(WatchInbound::Interrupted(e.into())),
+                None => Some(WatchInbound::Closed),
+            })
     }
 }
 

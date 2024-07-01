@@ -28,24 +28,24 @@ ifneq ("${ETCD_CLUSTER_WITH_TLS}", "false")
 	./hack/generate_etcd_certificate.sh
 endif
 	./hack/generate_etcd_cluster.sh ${ETCD_CLUSTER_DOCKER_COMPOSE} ${ETCD_VERSION} ${ETCD_CLUSTER_WITH_TLS}
-	docker-compose -f ${ETCD_CLUSTER_DOCKER_COMPOSE} up -d
+	docker compose -f ${ETCD_CLUSTER_DOCKER_COMPOSE} up -d
 
 .PHONY: start-etcd-node
 start-etcd-node:
 ifneq ("$(wildcard ${ETCD_CLUSTER_DOCKER_COMPOSE})","")
-	docker-compose -f ${ETCD_CLUSTER_DOCKER_COMPOSE} start ${ETCD_NODE}
+	docker compose -f ${ETCD_CLUSTER_DOCKER_COMPOSE} start ${ETCD_NODE}
 endif
 
 .PHONY: stop-etcd-node
 stop-etcd-node:
 ifneq ("$(wildcard ${ETCD_CLUSTER_DOCKER_COMPOSE})","")
-	docker-compose -f ${ETCD_CLUSTER_DOCKER_COMPOSE} stop ${ETCD_NODE}
+	docker compose -f ${ETCD_CLUSTER_DOCKER_COMPOSE} stop ${ETCD_NODE}
 endif
 
 .PHONY: teardown-etcd-cluster
 teardown-etcd-cluster:
 ifneq ("$(wildcard ${ETCD_CLUSTER_DOCKER_COMPOSE})","")
-	docker-compose -f ${ETCD_CLUSTER_DOCKER_COMPOSE} down
+	docker compose -f ${ETCD_CLUSTER_DOCKER_COMPOSE} down
 	rm ${ETCD_CLUSTER_DOCKER_COMPOSE}
 endif
 
@@ -55,7 +55,7 @@ etcd/etcdctl:
 .PHONY: etcd-cluster-status
 etcd-cluster-status: etcd/etcdctl
 ifneq ("$(wildcard ${ETCD_CLUSTER_DOCKER_COMPOSE})","")
-	docker-compose -f ${ETCD_CLUSTER_DOCKER_COMPOSE} ps;
+	docker compose -f ${ETCD_CLUSTER_DOCKER_COMPOSE} ps;
 	etcd/etcdctl endpoint status --endpoints=127.0.0.1:12379,127.0.0.1:22379,127.0.0.1:32379 -w table;
 endif
 

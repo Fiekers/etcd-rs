@@ -51,7 +51,11 @@ impl LeaseKeepAlive {
         req_tx: Sender<crate::proto::etcdserverpb::LeaseKeepAliveRequest>,
         resp_rx: Streaming<crate::proto::etcdserverpb::LeaseKeepAliveResponse>,
     ) -> Self {
-        Self { id, req_tx, resp_rx }
+        Self {
+            id,
+            req_tx,
+            resp_rx,
+        }
     }
 
     #[inline]
@@ -62,7 +66,10 @@ impl LeaseKeepAlive {
     pub async fn keep_alive(&mut self) -> Result<Option<LeaseKeepAliveResponse>> {
         let req = LeaseKeepAliveRequest::new(self.lease_id());
 
-        self.req_tx.send(req.into()).await.map_err(|_| Error::ChannelClosed)?;
+        self.req_tx
+            .send(req.into())
+            .await
+            .map_err(|_| Error::ChannelClosed)?;
 
         Ok(self.resp_rx.message().await?.map(|resp| resp.into()))
     }
