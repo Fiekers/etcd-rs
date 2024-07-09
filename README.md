@@ -51,7 +51,7 @@ Add following dependencies in your project `cargo.toml`:
 
 ```toml
 [dependencies]
-ya-etcd-rs = "1.1"
+ya-etcd-rs = "1.2"
 ```
 
 ```rust
