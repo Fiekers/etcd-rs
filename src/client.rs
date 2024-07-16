@@ -8,40 +8,35 @@ use tonic::{
     Status,
 };
 
-use crate::proto::etcdserverpb::{
-    auth_client::AuthClient, kv_client::KvClient, lease_client::LeaseClient,
-    watch_client::WatchClient,
-};
-use crate::watch::{WatchCanceler, WatchCreateRequest, WatchOp, WatchStream};
 use crate::{
-    auth::AuthEnableRequest,
-    kv::{
-        CompactRequest, CompactResponse, DeleteRequest, DeleteResponse, KeyRange, KeyValueOp,
-        PutRequest, PutResponse, RangeRequest, RangeResponse, TxnRequest, TxnResponse,
-    },
-};
-use crate::{
-    auth::AuthEnableResponse,
-    lease::{
-        LeaseGrantRequest, LeaseGrantResponse, LeaseId, LeaseKeepAlive, LeaseOp,
-        LeaseRevokeRequest, LeaseRevokeResponse, LeaseTimeToLiveRequest, LeaseTimeToLiveResponse,
-    },
+    auth::{AuthDisableRequest, AuthEnableRequest, AuthRoleListRequest},
+    proto::etcdserverpb::LeaseKeepAliveRequest,
 };
 use crate::{
     auth::{AuthOp, AuthenticateResponse},
-    AuthenticateRequest,
-};
-use crate::{
     cluster::{
         ClusterOp, MemberAddRequest, MemberAddResponse, MemberListRequest, MemberListResponse,
         MemberRemoveRequest, MemberRemoveResponse, MemberUpdateRequest, MemberUpdateResponse,
     },
-    AuthStatusResponse,
+    kv::{
+        CompactRequest, CompactResponse, DeleteRequest, DeleteResponse, KeyRange, KeyValueOp,
+        PutRequest, PutResponse, RangeRequest, RangeResponse, TxnRequest, TxnResponse,
+    },
+    lease::{
+        LeaseGrantRequest, LeaseGrantResponse, LeaseId, LeaseKeepAlive, LeaseOp,
+        LeaseRevokeRequest, LeaseRevokeResponse, LeaseTimeToLiveRequest, LeaseTimeToLiveResponse,
+    },
+    proto::etcdserverpb,
+    proto::etcdserverpb::cluster_client::ClusterClient,
+    proto::etcdserverpb::{
+        auth_client::AuthClient, kv_client::KvClient, lease_client::LeaseClient,
+        watch_client::WatchClient,
+    },
+    watch::{WatchCanceler, WatchCreateRequest, WatchOp, WatchStream},
+    AuthDisableResponse, AuthEnableResponse, AuthRoleAddRequest, AuthRoleAddResponse,
+    AuthRoleDeleteRequest, AuthRoleDeleteResponse, AuthRoleListResponse, AuthStatusRequest,
+    AuthStatusResponse, AuthenticateRequest, Error, Result,
 };
-use crate::{proto::etcdserverpb, AuthStatusRequest};
-use crate::{proto::etcdserverpb::cluster_client::ClusterClient, AuthDisableResponse};
-use crate::{proto::etcdserverpb::LeaseKeepAliveRequest, AuthDisableRequest};
-use crate::{Error, Result};
 
 static MAX_RETRY: i32 = 3;
 
@@ -174,7 +169,7 @@ impl AuthOp for Client {
     }
 
     async fn auth_status(&self) -> Result<AuthStatusResponse> {
-        let req = tonic::Request::new(AuthStatusRequest::new().into());
+        let req = tonic::Request::new(AuthStatusRequest::default().into());
         let resp = match self.auth_user {
             Some(_) => {
                 self.execute_with_retries(req, |req| async {
@@ -189,7 +184,7 @@ impl AuthOp for Client {
     }
 
     async fn auth_enable(&self) -> Result<AuthEnableResponse> {
-        let req = tonic::Request::new(AuthEnableRequest::new().into());
+        let req = tonic::Request::new(AuthEnableRequest::default().into());
         let resp = match self.auth_user {
             Some(_) => {
                 self.execute_with_retries(req, |req| async {
@@ -204,7 +199,7 @@ impl AuthOp for Client {
     }
 
     async fn auth_disable(&self) -> Result<AuthDisableResponse> {
-        let req = tonic::Request::new(AuthDisableRequest::new().into());
+        let req = tonic::Request::new(AuthDisableRequest::default().into());
         let resp = match self.auth_user {
             Some(_) => {
                 self.execute_with_retries(req, |req| async {
@@ -213,6 +208,57 @@ impl AuthOp for Client {
                 .await?
             }
             None => self.auth_client.clone().auth_disable(req).await?,
+        };
+
+        Ok(resp.into_inner().into())
+    }
+
+    async fn role_add<R>(&self, req: R) -> Result<AuthRoleAddResponse>
+    where
+        R: Into<AuthRoleAddRequest>,
+    {
+        let req = tonic::Request::new(req.into().into());
+        let resp = match self.auth_user {
+            Some(_) => {
+                self.execute_with_retries(req, |req| async {
+                    self.auth_client.clone().role_add(req).await
+                })
+                .await?
+            }
+            None => self.auth_client.clone().role_add(req).await?,
+        };
+
+        Ok(resp.into_inner().into())
+    }
+
+    async fn role_delete<R>(&self, req: R) -> Result<AuthRoleDeleteResponse>
+    where
+        R: Into<AuthRoleDeleteRequest>,
+    {
+        let req = tonic::Request::new(req.into().into());
+        let resp = match self.auth_user {
+            Some(_) => {
+                self.execute_with_retries(req, |req| async {
+                    self.auth_client.clone().role_delete(req).await
+                })
+                .await?
+            }
+            None => self.auth_client.clone().role_delete(req).await?,
+        };
+
+        Ok(resp.into_inner().into())
+    }
+
+    async fn role_list(&self) -> Result<AuthRoleListResponse> {
+        let req = tonic::Request::new(AuthRoleListRequest::default().into());
+        let resp = match self.auth_user {
+            Some(_) => {
+                self.execute_with_retries(req, |req| async {
+                    self.auth_client.clone().role_list(req).await
+                })
+                .await?
+            }
+            None => self.auth_client.clone().role_list(req).await?,
         };
 
         Ok(resp.into_inner().into())

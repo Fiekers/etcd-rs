@@ -1,4 +1,20 @@
-use ya_etcd_rs::{AuthOp, Client, ClientConfig, Result};
+use ya_etcd_rs::{AuthOp, AuthRoleAddRequest, AuthRoleDeleteRequest, Client, ClientConfig, Result};
+
+async fn role(cli: &Client) -> Result<()> {
+    cli.role_add(AuthRoleAddRequest::new("foo_role"))
+        .await
+        .expect("role add");
+
+    let resp = cli.role_list().await.expect("role list");
+
+    assert!(!resp.roles.is_empty());
+
+    cli.role_delete(AuthRoleDeleteRequest::new("foo_role"))
+        .await
+        .expect("role delete");
+
+    Ok(())
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -23,6 +39,7 @@ async fn main() -> Result<()> {
         let resp = cli.auth_status().await?;
         assert!(resp.enabled);
     }
+    role(&cli).await?;
 
     Ok(())
 }

@@ -3,8 +3,9 @@
 //! etcd-rs supports etcd v3 API and async/await syntax.
 
 pub use auth::{
-    AuthDisableRequest, AuthDisableResponse, AuthEnableRequest, AuthEnableResponse, AuthOp,
-    AuthStatusRequest, AuthStatusResponse, AuthenticateRequest, AuthenticateResponse,
+    AuthDisableResponse, AuthEnableResponse, AuthOp, AuthRoleAddRequest, AuthRoleAddResponse,
+    AuthRoleDeleteRequest, AuthRoleDeleteResponse, AuthRoleListResponse, AuthStatusRequest,
+    AuthStatusResponse, AuthenticateRequest, AuthenticateResponse,
 };
 pub use cluster::{
     ClusterOp, Member, MemberAddRequest, MemberAddResponse, MemberListRequest, MemberListResponse,
