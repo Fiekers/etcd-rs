@@ -8,30 +8,39 @@ use tonic::{
     Status,
 };
 
-use crate::cluster::{
-    ClusterOp, MemberAddRequest, MemberAddResponse, MemberListRequest, MemberListResponse,
-    MemberRemoveRequest, MemberRemoveResponse, MemberUpdateRequest, MemberUpdateResponse,
-};
-use crate::kv::{
-    CompactRequest, CompactResponse, DeleteRequest, DeleteResponse, KeyRange, KeyValueOp,
-    PutRequest, PutResponse, RangeRequest, RangeResponse, TxnRequest, TxnResponse,
-};
-use crate::lease::{
-    LeaseGrantRequest, LeaseGrantResponse, LeaseId, LeaseKeepAlive, LeaseOp, LeaseRevokeRequest,
-    LeaseRevokeResponse, LeaseTimeToLiveRequest, LeaseTimeToLiveResponse,
-};
-use crate::proto::etcdserverpb;
-use crate::proto::etcdserverpb::cluster_client::ClusterClient;
-use crate::proto::etcdserverpb::LeaseKeepAliveRequest;
 use crate::proto::etcdserverpb::{
     auth_client::AuthClient, kv_client::KvClient, lease_client::LeaseClient,
     watch_client::WatchClient,
 };
 use crate::watch::{WatchCanceler, WatchCreateRequest, WatchOp, WatchStream};
 use crate::{
+    auth::AuthEnableRequest,
+    kv::{
+        CompactRequest, CompactResponse, DeleteRequest, DeleteResponse, KeyRange, KeyValueOp,
+        PutRequest, PutResponse, RangeRequest, RangeResponse, TxnRequest, TxnResponse,
+    },
+};
+use crate::{
+    auth::AuthEnableResponse,
+    lease::{
+        LeaseGrantRequest, LeaseGrantResponse, LeaseId, LeaseKeepAlive, LeaseOp,
+        LeaseRevokeRequest, LeaseRevokeResponse, LeaseTimeToLiveRequest, LeaseTimeToLiveResponse,
+    },
+};
+use crate::{
     auth::{AuthOp, AuthenticateResponse},
     AuthenticateRequest,
 };
+use crate::{
+    cluster::{
+        ClusterOp, MemberAddRequest, MemberAddResponse, MemberListRequest, MemberListResponse,
+        MemberRemoveRequest, MemberRemoveResponse, MemberUpdateRequest, MemberUpdateResponse,
+    },
+    AuthStatusResponse,
+};
+use crate::{proto::etcdserverpb, AuthStatusRequest};
+use crate::{proto::etcdserverpb::cluster_client::ClusterClient, AuthDisableResponse};
+use crate::{proto::etcdserverpb::LeaseKeepAliveRequest, AuthDisableRequest};
 use crate::{Error, Result};
 
 static MAX_RETRY: i32 = 3;
@@ -160,6 +169,51 @@ impl AuthOp for Client {
     {
         let req = tonic::Request::new(req.into().into());
         let resp = self.auth_client.clone().authenticate(req).await?;
+
+        Ok(resp.into_inner().into())
+    }
+
+    async fn auth_status(&self) -> Result<AuthStatusResponse> {
+        let req = tonic::Request::new(AuthStatusRequest::new().into());
+        let resp = match self.auth_user {
+            Some(_) => {
+                self.execute_with_retries(req, |req| async {
+                    self.auth_client.clone().auth_status(req).await
+                })
+                .await?
+            }
+            None => self.auth_client.clone().auth_status(req).await?,
+        };
+
+        Ok(resp.into_inner().into())
+    }
+
+    async fn auth_enable(&self) -> Result<AuthEnableResponse> {
+        let req = tonic::Request::new(AuthEnableRequest::new().into());
+        let resp = match self.auth_user {
+            Some(_) => {
+                self.execute_with_retries(req, |req| async {
+                    self.auth_client.clone().auth_enable(req).await
+                })
+                .await?
+            }
+            None => self.auth_client.clone().auth_enable(req).await?,
+        };
+
+        Ok(resp.into_inner().into())
+    }
+
+    async fn auth_disable(&self) -> Result<AuthDisableResponse> {
+        let req = tonic::Request::new(AuthDisableRequest::new().into());
+        let resp = match self.auth_user {
+            Some(_) => {
+                self.execute_with_retries(req, |req| async {
+                    self.auth_client.clone().auth_disable(req).await
+                })
+                .await?
+            }
+            None => self.auth_client.clone().auth_disable(req).await?,
+        };
 
         Ok(resp.into_inner().into())
     }
