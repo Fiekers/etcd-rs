@@ -1,23 +1,9 @@
 use crate::proto::etcdserverpb;
 use crate::ResponseHeader;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct AuthEnableRequest {
     proto: etcdserverpb::AuthEnableRequest,
-}
-
-impl AuthEnableRequest {
-    pub fn new() -> Self {
-        Self {
-            proto: etcdserverpb::AuthEnableRequest {},
-        }
-    }
-}
-
-impl Default for AuthEnableRequest {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl From<AuthEnableRequest> for etcdserverpb::AuthEnableRequest {
