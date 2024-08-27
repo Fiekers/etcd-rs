@@ -49,6 +49,15 @@ An [etcd](https://github.com/etcd-io/etcd) (API v3) client for Rust backed by [t
   - [ ] Snapshot
   - [ ] MoveLeader
 
+### Rust Version
+
+`ya-etcd-rs`'s MSRV is `1.77`.
+
+```bash
+$ rustup update
+$ cargo build
+```
+
 ## Usage
 
 Add following dependencies in your project `cargo.toml`:
