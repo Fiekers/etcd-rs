@@ -485,6 +485,7 @@ impl WatchOp for Client {
         tx.send(req.into().into()).await?;
 
         let mut req = tonic::Request::new(ReceiverStream::new(rx));
+        self.refresh_token().await?;
         self.set_token(&mut req).await;
 
         req.metadata_mut()
@@ -500,6 +501,9 @@ impl WatchOp for Client {
                     return Err(Error::WatchEvent(
                         "should receive created event at first".to_owned(),
                     ));
+                }
+                if resp.canceled {
+                    return Err(Error::WatchEvent(resp.cancel_reason));
                 }
                 assert!(resp.events.is_empty(), "received created event {:?}", resp);
                 resp.watch_id
