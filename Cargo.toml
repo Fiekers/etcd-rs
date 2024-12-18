@@ -40,14 +40,14 @@ tls = ["tonic/tls", "tokio/fs"]
 [dependencies]
 tonic = "0.12"
 prost = "0.13"
-tokio = "1.41"
+tokio = "1.42"
 tokio-stream = "0.1"
 futures = "0.3"
 thiserror = "2.0"
-http = "1.1"
+http = "1.2"
 
 [dev-dependencies]
-tokio = { version = "1.41", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.42", features = ["macros", "rt-multi-thread"] }
 
 [build-dependencies]
 tonic-build = "0.12"
